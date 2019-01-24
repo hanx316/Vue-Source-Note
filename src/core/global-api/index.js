@@ -26,7 +26,7 @@ import {
  */
 export function initGlobalAPI (Vue: GlobalAPI) {
   // config
-  // 通过 Vue.config 获取预定义的配置， 不允许 set
+  // 通过 Vue.config 获取预定义的配置，不允许 set
   const configDef = {}
   configDef.get = () => config
   if (process.env.NODE_ENV !== 'production') {
@@ -41,7 +41,7 @@ export function initGlobalAPI (Vue: GlobalAPI) {
   // exposed util methods.
   // NOTE: these are not considered part of the public API - avoid relying on
   // them unless you are aware of the risk.
-  // Vue 暴露了一些工具方法，但并不推荐使用， why？
+  // Vue 暴露了一些工具方法，但并不推荐使用, why?
   Vue.util = {
     warn,
     extend,
@@ -68,6 +68,7 @@ export function initGlobalAPI (Vue: GlobalAPI) {
   // Vue.options._base 挂载了最初的 Vue 构造函数
   Vue.options._base = Vue
 
+  // 注册 Vue 内置组件，单独 Vue 内置的组件只有 Keep-Alive
   extend(Vue.options.components, builtInComponents)
 
   initUse(Vue)
