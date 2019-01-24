@@ -1,5 +1,8 @@
 /* @flow */
 
+/**
+ * global-api 目录下的其他文件都在这里引入并初始化
+ */
 import config from '../config'
 import { initUse } from './use'
 import { initMixin } from './mixin'
@@ -10,13 +13,12 @@ import { ASSET_TYPES } from 'shared/constants'
 import builtInComponents from '../components/index'
 
 import {
-  warn,
-  extend,
-  nextTick,
-  mergeOptions,
-  defineReactive
+  warn,           // core/util/debug
+  extend,         // shared/util
+  nextTick,       // core/util/next-tick
+  mergeOptions,   // core/util/options
+  defineReactive  // core/util/index => observer/index
 } from '../util/index'
-
 
 /**
  * 初始化 Vue 全局 API
