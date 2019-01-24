@@ -41,7 +41,7 @@ export class Observer {
    * Observer 实例上三个属性：
    * 1. value: 观测的数据对象
    * 2. dep: 依赖收集容器对象
-   * 3. vmCount: 初始化为 0, 目前看来应该是数据涉及的虚拟 DOM 数？ 待定
+   * 3. vmCount: 观测数据对象作为根数据的 Vue 实例数量，初始化为 0
    * Observer 两个原型方法
    * 1. walk 遍历对象 key 设置属性变化响应
    * 2. observeArray 观测数组
