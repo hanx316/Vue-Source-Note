@@ -12,11 +12,20 @@
 
 #### 2019.01.24
 
-1. 阅读 src/shared/util 中部分方法
-2. 简单梳理 src/core/observer/index 中 Observer 构造器逻辑
+- 阅读 src/shared/util 中部分方法
+- 简单梳理 src/core/observer/index 中 Observer 构造器逻辑
 
 疑问：
 
 1. 为什么 src/shared/util 中提到 isUndef 等四个方法更好？
 2. 为什么 src/core/util/lang 中检测字符串开头的方法要用十六进制来比较字符编码？
 3. Observer 是用来观测 plain object 或者 array 的，为什么对参数 value 的 Flow 类型检测要设为 any? src/core/observer/index
+
+#### 2019.01.25
+
+- src/core/observe/index 中的 observe 和 defineReactive 方法
+
+疑问：
+
+1. defineReactive 的后两个参数？
+2. 有一些过去有的判断代码，后来处于什么考虑去掉了？
