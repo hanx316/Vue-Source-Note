@@ -4,14 +4,14 @@ import Dep from './dep'
 import VNode from '../vdom/vnode'
 import { arrayMethods } from './array'
 import {
-  def, // core/util/lang
+  def,                  // core/util/lang
   warn,
-  hasOwn,
+  hasOwn,               // shared/util
   hasProto,
-  isObject,
-  isPlainObject,
-  isValidArrayIndex,
-  isServerRendering
+  isObject,             // shared/util
+  isPlainObject,        // shared/util
+  isValidArrayIndex,    // shared/util
+  isServerRendering     // core/util/env
 } from '../util/index'
 
 const arrayKeys = Object.getOwnPropertyNames(arrayMethods)
@@ -22,8 +22,20 @@ const arrayKeys = Object.getOwnPropertyNames(arrayMethods)
  * we don't want to force conversion because the value may be a nested value
  * under a frozen data structure. Converting it would defeat the optimization.
  */
+/**
+ * 默认情况下，当设置了一个响应式属性，新的值会被转化为响应式的
+ * 然而当传递 props 时，并不希望发生这种强制转换，因为也许传递的是一个冻结对象下的嵌套值
+ * 强制转换会破坏冻结的设计
+ *
+ * es 的 const 如果声明引用类型的值，引用地址不能改变，但是其中存储的值依然可以改变
+ * 有讨论说认为 const 作为常量声明，就算引用类型，也应该保持内部的值不变
+ * 但从 vue 这样使用看来，大可不必做这样的坚持，本身就是语言规范赋予的不算糟粕的特性，可以利用起来
+ *
+ * observerState 会 export 出去供外部修改 shouldConvert，提供一个标志来控制这种 observe 的发生依然是有必要的，比如避免重复 observe
+ */
 export const observerState = {
   shouldConvert: true
+  // isSettingProps: false 过往版本还有这个属性，不知道什么时候，出于什么考虑去掉了
 }
 
 /**
@@ -118,7 +130,14 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
  * returns the new observer if successfully observed,
  * or the existing observer if the value already has one.
  */
+/**
+ * 创建 Observer 实例
+ * 如果成功创建则返回实例
+ * 如果已有实例则返回当前实例
+ * 通过 __ob__ 来判断
+ */
 export function observe (value: any, asRootData: ?boolean): Observer | void {
+  // isObject 的使用是有预设场景的
   if (!isObject(value) || value instanceof VNode) {
     return
   }
@@ -126,14 +145,17 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
-    observerState.shouldConvert &&
+    // Object.isExtensible 检查对象是否可以添加属性
+    // 在预设的基础上再确定是 array || plain object
+    observerState.shouldConvert && // 参考上面 observerState 的声明注释
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
     Object.isExtensible(value) &&
-    !value._isVue
+    !value._isVue // 非 vue 实例 core/instance/init 所有 vue 实例都设置了 _isVue 为 true
   ) {
     ob = new Observer(value)
   }
+  // 每一次 observe 调用，如果是根数据就递增数据绑定的 vue 实例数量
   if (asRootData && ob) {
     ob.vmCount++
   }
@@ -142,24 +164,34 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
 
 /**
  * Define a reactive property on an Object.
+ * 定义一个对象上的响应式属性，主要是添加 getter/setter
  */
 export function defineReactive (
   obj: Object,
   key: string,
   val: any,
+  // 下面两个扩展参数有点意思，阅读到相关代码的时候留意一下为什么
   customSetter?: ?Function,
   shallow?: boolean
 ) {
+  // 依赖收集对象
   const dep = new Dep()
 
+  // Object.getOwnPropertyDescriptor 获取属性描述符
+  // 严谨的边界判断
   const property = Object.getOwnPropertyDescriptor(obj, key)
   if (property && property.configurable === false) {
     return
   }
 
   // cater for pre-defined getter/setters
+  // 对象可能已经存在 getter/setter, 所以提取出来，在下面的 get/set 中先调用，避免覆盖和丢失原来的操作
   const getter = property && property.get
   const setter = property && property.set
+  // 市面上讲解的 2.5.x 的代码还有下面这段，后来又去掉了，未知原因
+  // if (!getter && arguments.length === 2) {
+  //   val = obj[key]
+  // }
 
   let childOb = !shallow && observe(val)
   Object.defineProperty(obj, key, {
