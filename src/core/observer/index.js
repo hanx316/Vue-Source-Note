@@ -83,16 +83,19 @@ export class Observer {
    * Walk through each property and convert them into
    * getter/setters. This method should only be called when
    * value type is Object.
+   * 遍历对象的 key 添加 getter/setter
    */
   walk (obj: Object) {
     const keys = Object.keys(obj)
     for (let i = 0; i < keys.length; i++) {
+      // defineReactive(obj, key, value)
       defineReactive(obj, keys[i], obj[keys[i]])
     }
   }
 
   /**
    * Observe a list of Array items.
+   * 观测数组元素
    */
   observeArray (items: Array<any>) {
     for (let i = 0, l = items.length; i < l; i++) {
@@ -170,9 +173,8 @@ export function defineReactive (
   obj: Object,
   key: string,
   val: any,
-  // 下面两个扩展参数有点意思，阅读到相关代码的时候留意一下为什么
-  customSetter?: ?Function,
-  shallow?: boolean
+  customSetter?: ?Function,       // 自定义 setter
+  shallow?: boolean               // 默认是深度观测，为 true 时为浅观测（即不考虑对象嵌套）
 ) {
   // 依赖收集对象
   const dep = new Dep()
@@ -193,12 +195,20 @@ export function defineReactive (
   //   val = obj[key]
   // }
 
+  // 这里对是否深度观测进行了判断，默认会开启深度观测, childOb === val.__ob__
+  // 如果 val 是个对象或数组，那么通过 observe 的调用, new Observer 的调用，最终形成 defineReactive 的递归
+  // 如果 val 只是原始值类型，那么 observe 会直接 return
+  // 这一步，解决了 val 如果为对象或数组，它的子孙元素的观测问题
   let childOb = !shallow && observe(val)
+
+  // 这一步，才是解决观测 val 本身的问题
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
     get: function reactiveGetter () {
+      // 对已经存在的 getter 的处理
       const value = getter ? getter.call(obj) : val
+      // 处理依赖
       if (Dep.target) {
         dep.depend()
         if (childOb) {
@@ -211,21 +221,35 @@ export function defineReactive (
       return value
     },
     set: function reactiveSetter (newVal) {
+      // 对已经存在的 getter 的处理，在 setter 中依然要处理 getter
       const value = getter ? getter.call(obj) : val
       /* eslint-disable no-self-compare */
+      // newVal !== newVal && value !== value js 中可能出现自身和自身不等的值是 NaN
+      // 所以如果两个值不严格相等，那么存在两种可能：
+      // 1. 两个值确实不等
+      // 2. 两个值都是 NaN
+      // 在两个值不等的前提下，如果新旧的 val 都和自身不等，说明新旧值是 NaN, 那么 return
       if (newVal === value || (newVal !== newVal && value !== value)) {
         return
       }
       /* eslint-enable no-self-compare */
+      /**
+       * 如果传入了自定义 setter 则调用，但是前提是非生产模式
+       * 从这里逻辑看出来, customSetter 和 setter 本来要处理的逻辑并非冲突，而是额外新增的
+       * 并且屏蔽了生产模式，应该是一个开发模式下起辅助作用的东西
+       */
       if (process.env.NODE_ENV !== 'production' && customSetter) {
         customSetter()
       }
+      // 对已经存在的 setter 的处理
       if (setter) {
         setter.call(obj, newVal)
       } else {
         val = newVal
       }
+      // 处理新的值是对象或数组的情况
       childOb = !shallow && observe(newVal)
+      // 订阅依赖
       dep.notify()
     }
   })
