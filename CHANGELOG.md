@@ -27,5 +27,9 @@
 
 疑问：
 
-1. defineReactive 的后两个参数？
+1. ~~defineReactive 的后两个参数？~~
 2. 有一些过去有的判断代码，后来处于什么考虑去掉了？
+
+#### 2019.01.29
+
+- src/core/observe/index 中的 defineReactive 方法
