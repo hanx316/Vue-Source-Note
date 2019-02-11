@@ -148,13 +148,19 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
-    // Object.isExtensible 检查对象是否可以添加属性
-    // 在预设的基础上再确定是 array || plain object
+    /**
+     * new Observer 调用的几个条件
+     * 1. 可观测标志是 true
+     * 2. 不是服务端渲染
+     * 3. 在预设引用类型的基础上再确定是 array || plain object
+     * 4. 对象或数组可以被扩展属性
+     * 5. 不是 Vue 实例
+     */
     observerState.shouldConvert && // 参考上面 observerState 的声明注释
     !isServerRendering() &&
     (Array.isArray(value) || isPlainObject(value)) &&
-    Object.isExtensible(value) &&
-    !value._isVue // 非 vue 实例 core/instance/init 所有 vue 实例都设置了 _isVue 为 true
+    Object.isExtensible(value) && // Object.isExtensible 检查对象是否可以添加属性
+    !value._isVue // core/instance/init 所有 vue 实例都设置了 _isVue 为 true
   ) {
     ob = new Observer(value)
   }
@@ -259,6 +265,7 @@ export function defineReactive (
  * Set a property on an object. Adds the new property and
  * triggers change notification if the property doesn't
  * already exist.
+ * Vue.set 以及 Vue.prototype.$set 的实现
  */
 export function set (target: Array<any> | Object, key: any, val: any): any {
   if (Array.isArray(target) && isValidArrayIndex(key)) {
