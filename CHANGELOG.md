@@ -28,8 +28,17 @@
 疑问：
 
 1. ~~defineReactive 的后两个参数？~~
-2. 有一些过去有的判断代码，后来处于什么考虑去掉了？
+2. ~~有一些过去有的判断代码，后来处于什么考虑去掉了？~~
 
 #### 2019.01.29
 
 - src/core/observe/index 中的 defineReactive 方法
+
+#### 2019.02.12
+
+- 更新代码版本(src/core/observe/index)到 2.6.5, 完善注释内容
+- 重点分析 defineReactive 中 getter/setter 的处理
+
+疑问：
+
+1. 为什么 `dep.notify()` 可以在有 getter 没有 setter 的条件下跳过
