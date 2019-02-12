@@ -235,7 +235,7 @@ export function defineReactive (
    * C: 有 getter 没有 setter
    * D: 没有 getter 有 setter
    */
-  // (!getter || setter) 包括了以上 ABD 三种情况
+  // 下面的判断 (!getter || setter) 包括了以上 ABD 三种情况
   // arguments.length === 2 说明没有传递第三个参数 val
   // 以上两个条件必须同时满足，表示必须是没有传入 val 的时候才去对 val 赋值
   // 所以如果要考虑 val 赋值的话，当且仅当只有 getter 的时候，才跳过赋值
@@ -251,7 +251,7 @@ export function defineReactive (
   // 情况 AC 存在 getter, 在传入 obj[keys[i]] 时就会先调用一次 getter，与下面的 value 的声明处重复调用了
   // 所以那个 PR 去除了 walk 中 defineReactive 传入的 val，而在这里进行判断，如果不存在 getter 才赋值一次，反正最终的 value 是下面决定的
   // 看上去很美好，但是对于存在 getter 的情况这里就漏了赋值, val 就是 undefined
-  // 这样一来, 先调用的 observe(val) 传入的就是 undefined, 如果数据是嵌套的对象或数组，就不会再按照预期进行观测，根据讨论看来这被认为是合理的情况
+  // 这样一来, 再下一行先调用的 observe(val) 传入的就是 undefined, 如果数据是嵌套的对象或数组，就不会再按照预期进行观测，根据讨论看来这被认为是合理的情况
   // 也就是说，基于上面的讨论，如果一个属性已经存在 getter, 那么不应该再深度观测，避免用户在 getter 中搞骚操作
   // 但是这样又产生了新的问题， defineReactive 为 val 添加了 get/set 方法
   // 如果对原本不会深度观测的数据重新赋值，会触发 setter 继而调用 observe(newVal)，而 newVal 不会是 undefined
@@ -261,6 +261,7 @@ export function defineReactive (
   // 原本不会深度观测的情况 AC 又去掉了 A, 原本要规避的问题其实又出现了漏洞
   // 绕了这么大一圈，都是最开始那个糟糕的 PR 的锅，而他本来在 getter 中做很多额外操作导致重复调用开销变大的问题个人认为本来就不是一个好的设计
   // 再者，从 defineReactive 的参数设计上 val 就不是选择传入的，这里改了一堆，让 defineReactive 的调用出现了分支情况，让问题变得更复杂
+  // 以上是下面这个 if 条件的来龙去脉
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
@@ -324,7 +325,7 @@ export function defineReactive (
         // 所以如果有 getter 的属性，这一步执行与否都无所谓
         // 所以对于 getter && !setter 即情况 C, 由于本来也不必对原始数据进行深度观测，observe(newVal) 也就不必要了
         // 至于 dep.notify() 为什么也可以不用，先留个坑，看到 dep 的时候再填
-        // 所以前面有有一行提前 return 的操作
+        // 所以前面有一行提前 return 的操作
         val = newVal
       }
       // 处理新的值是对象或数组的情况
