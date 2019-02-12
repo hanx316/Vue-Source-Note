@@ -20,5 +20,6 @@ export const LIFECYCLE_HOOKS = [
   'destroyed',
   'activated',
   'deactivated',
-  'errorCaptured'
+  'errorCaptured',
+  'serverPrefetch' // 2.6 新增的钩子 参考这个 PR: https://github.com/vuejs/vue/pull/9017
 ]
