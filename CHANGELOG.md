@@ -38,6 +38,8 @@
 
 - 更新代码版本(src/core/observe/index)到 2.6.5, 完善注释内容
 - 重点分析 defineReactive 中 getter/setter 的处理
+- checkout v2.6.6, 没有修改到目前看到的内容，更新版本到 2.6.6
+- 更新 src/shared/constants
 
 疑问：
 
