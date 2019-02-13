@@ -47,4 +47,4 @@
 
 #### 2019.02.13
 
-- 更新 `src/core/config`, `src/core/index`, `src/core/global-api/index`, `src/shared/util` 到 2.6.6
+- 更新剩余的已读代码到 2.6.6
