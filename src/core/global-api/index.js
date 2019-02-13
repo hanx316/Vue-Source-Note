@@ -11,6 +11,7 @@ import { initAssetRegisters } from './assets'
 import { set, del } from '../observer/index'
 import { ASSET_TYPES } from 'shared/constants'
 import builtInComponents from '../components/index'
+import { observe } from 'core/observer/index'
 
 import {
   warn,           // core/util/debug
@@ -53,6 +54,17 @@ export function initGlobalAPI (Vue: GlobalAPI) {
   Vue.set = set
   Vue.delete = del
   Vue.nextTick = nextTick
+
+  /**
+   * 2.6 新增的 Vue.observable API
+   * 用于 render func, 跨组件 state 通信等场景，具体可以看文档
+   * 就是直接调用了一次 observe 方法
+   */
+  // 2.6 explicit observable API
+  Vue.observable = <T>(obj: T): T => {
+    observe(obj)
+    return obj
+  }
 
   /**
    * 初始化 Vue 的默认 option
