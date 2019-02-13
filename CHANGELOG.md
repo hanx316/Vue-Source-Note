@@ -44,3 +44,7 @@
 疑问：
 
 1. 为什么 `dep.notify()` 可以在有 getter 没有 setter 的条件下跳过
+
+#### 2019.02.13
+
+- 更新 src/core/config src/core/index src/core/global-api/index 到 2.6.6
