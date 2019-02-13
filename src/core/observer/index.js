@@ -235,41 +235,44 @@ export function defineReactive (
    * C: 有 getter 没有 setter
    * D: 没有 getter 有 setter
    */
-  // 下面的判断 (!getter || setter) 包括了以上 ABD 三种情况
-  // arguments.length === 2 说明没有传递第三个参数 val
-  // 以上两个条件必须同时满足，表示必须是没有传入 val 的时候才去对 val 赋值
-  // 所以如果要考虑 val 赋值的话，当且仅当只有 getter 的时候，才跳过赋值
-  // 这里的判断变更过几次，最初是则是完全没有，可以参考这个 PR
-  // https://github.com/vuejs/vue/pull/7302
-  // walk 的实现中是这样调用的 defineReactive(obj, keys[i])，并没有传入 val，而是在这里来对 val 赋值
-  // 为什么这样做，参考：保证定义响应式数据行为的一致性 http://hcysun.me/vue-design/art/7vue-reactive.html
+  /**
+   * 下面的判断 (!getter || setter) 包括了以上 ABD 三种情况
+   * arguments.length === 2 说明没有传递第三个参数 val
+   * 以上两个条件必须同时满足，表示必须是没有传入 val 的时候才去对 val 赋值
+   * 所以如果要考虑 val 赋值的话，当且仅当只有 getter 的时候，才跳过赋值
+   * 这里的判断变更过几次，最初是则是完全没有，可以参考这个 PR
+   * https://github.com/vuejs/vue/pull/7302
+   * walk 的实现中是这样调用的 defineReactive(obj, keys[i])，并没有传入 val，而是在这里来对 val 赋值
+   * 为什么这样做，参考：保证定义响应式数据行为的一致性 http://hcysun.me/vue-design/art/7vue-reactive.html
 
-  // 以下是我的理解：
-  // 简单说，显式声明的对象是没有 get/set 方法的，但是通过 Object.defineProperty 可以让一个对象的属性存在上面 ABCD 四种情况
-  // 那么我们需要考虑，如果 defineReactive 传入了 val, 即原来 walk 中这样调用 defineReactive(obj, keys[i], obj[keys[i]])
-  // 在面对 ABCD 四种情况出现时会发生什么事？
-  // 情况 AC 存在 getter, 在传入 obj[keys[i]] 时就会先调用一次 getter，与下面的 value 的声明处重复调用了
-  // 所以那个 PR 去除了 walk 中 defineReactive 传入的 val，而在这里进行判断，如果不存在 getter 才赋值一次，反正最终的 value 是下面决定的
-  // 看上去很美好，但是对于存在 getter 的情况这里就漏了赋值, val 就是 undefined
-  // 这样一来, 再下一行先调用的 observe(val) 传入的就是 undefined, 如果数据是嵌套的对象或数组，就不会再按照预期进行观测，根据讨论看来这被认为是合理的情况
-  // 也就是说，基于上面的讨论，如果一个属性已经存在 getter, 那么不应该再深度观测，避免用户在 getter 中搞骚操作
-  // 但是这样又产生了新的问题， defineReactive 为 val 添加了 get/set 方法
-  // 如果对原本不会深度观测的数据重新赋值，会触发 setter 继而调用 observe(newVal)，而 newVal 不会是 undefined
-  // 如果 newVal 正好又是一个嵌套的对象或者数组，这样原本不会深度观测的数据在经过一次赋值之后又变成了深度观测的数据，产生了不一致的情况
-  // 这个 PR 进行了部分修正: https://github.com/vuejs/vue/pull/7828
-  // 这样只有当情况 C, 只存在 getter 时才会跳过赋值（不会事先对嵌套数据进行深度观测），意味着如果存在 setter 那么无论如何都会深度观测
-  // 原本不会深度观测的情况 AC 又去掉了 A, 原本要规避的问题其实又出现了漏洞
-  // 绕了这么大一圈，都是最开始那个糟糕的 PR 的锅，而他本来在 getter 中做很多额外操作导致重复调用开销变大的问题个人认为本来就不是一个好的设计
-  // 再者，从 defineReactive 的参数设计上 val 就不是选择传入的，这里改了一堆，让 defineReactive 的调用出现了分支情况，让问题变得更复杂
-  // 以上是下面这个 if 条件的来龙去脉
+   * 以下是我的理解：
+   * 简单说，显式声明的对象是没有 get/set 方法的，但是通过 Object.defineProperty 可以让一个对象的属性存在上面 ABCD 四种情况
+   * 那么我们需要考虑，如果 defineReactive 传入了 val, 即原来 walk 中这样调用 defineReactive(obj, keys[i], obj[keys[i]])
+   * 在面对 ABCD 四种情况出现时会发生什么事？
+   * 情况 AC 存在 getter, 在传入 obj[keys[i]] 时就会先调用一次 getter，与下面的 value 的声明处重复调用了
+   * 所以那个 PR 去除了 walk 中 defineReactive 传入的 val，而在这里进行判断，如果不存在 getter 才赋值一次，反正最终的 value 是下面决定的
+   * 看上去很美好，但是对于存在 getter 的情况这里就漏了赋值, val 就是 undefined
+   * 这样一来, 再下一行先调用的 observe(val) 传入的就是 undefined, 如果数据是嵌套的对象或数组，就不会再按照预期进行观测，根据讨论看来这被认为是合理的情况
+   * 也就是说，基于上面的讨论，如果一个属性已经存在 getter, 那么不应该再深度观测，避免用户在 getter 中搞骚操作
+   * 但是这样又产生了新的问题， defineReactive 为 val 添加了 get/set 方法
+   * 如果对原本不会深度观测的数据重新赋值，会触发 setter 继而调用 observe(newVal)，而 newVal 不会是 undefined
+   * 如果 newVal 正好又是一个嵌套的对象或者数组，这样原本不会深度观测的数据在经过一次赋值之后又变成了深度观测的数据，产生了不一致的情况
+   * 这个 PR 进行了部分修正: https://github.com/vuejs/vue/pull/7828
+   * 这样只有当情况 C, 只存在 getter 时才会跳过赋值（不会事先对嵌套数据进行深度观测），意味着如果存在 setter 那么无论如何都会深度观测
+   * 原本不会深度观测的情况 AC 又去掉了 A, 原本要规避的问题其实又出现了漏洞
+   * 绕了这么大一圈，都是最开始那个糟糕的 PR 的锅，而他本来在 getter 中做很多额外操作导致重复调用开销变大的问题个人认为本来就不是一个好的设计
+   * 再者，从 defineReactive 的参数设计上 val 就不是选择传入的，这里改了一堆，让 defineReactive 的调用出现了分支情况，让问题变得更复杂
+   * 以上是下面这个 if 条件的来龙去脉
+   */
   if ((!getter || setter) && arguments.length === 2) {
     val = obj[key]
   }
-
-  // 这里对是否深度观测进行了判断，默认会开启深度观测, childOb === val.__ob__
-  // 如果 val 是个对象或数组，那么通过 observe 的调用, new Observer 的调用，最终形成 defineReactive 的递归
-  // 如果 val 只是原始值类型，那么 observe 会直接 return undefined
-  // 这一步，解决了 val 如果为对象或数组，它的子孙元素的观测问题
+  /**
+   * 这里对是否深度观测进行了判断，默认会开启深度观测, childOb === val.__ob__
+   * 如果 val 是个对象或数组，那么通过 observe 的调用, new Observer 的调用，最终形成 defineReactive 的递归
+   * 如果 val 只是原始值类型，那么 observe 会直接 return undefined
+   * 这一步，解决了 val 如果为对象或数组，它的子孙元素的观测问题
+   */
   let childOb = !shallow && observe(val)
 
   // 这一步，才是解决观测 val 本身的问题
@@ -320,12 +323,14 @@ export function defineReactive (
         // 如果有 setter 就直接调用 setter 来修改 newVal
         setter.call(obj, newVal)
       } else {
-        // 如果没有 setter 就手动修改 val
-        // 但是从上面看来，如果存在 getter, get 返回的值是从 getter 来的，而非 val
-        // 所以如果有 getter 的属性，这一步执行与否都无所谓
-        // 所以对于 getter && !setter 即情况 C, 由于本来也不必对原始数据进行深度观测，observe(newVal) 也就不必要了
-        // 至于 dep.notify() 为什么也可以不用，先留个坑，看到 dep 的时候再填
-        // 所以前面有一行提前 return 的操作
+        /**
+         * 如果没有 setter 就手动修改 val
+         * 但是从上面看来，如果存在 getter, get 返回的值是从 getter 来的，而非 val
+         * 所以如果有 getter 的属性，这一步执行与否都无所谓
+         * 所以对于 getter && !setter 即情况 C, 由于本来也不必对原始数据进行深度观测，observe(newVal) 也就不必要了
+         * 至于 dep.notify() 为什么也可以不用，先留个坑，看到 dep 的时候再填
+         * 所以前面有一行提前 return 的操作
+         */
         val = newVal
       }
       // 处理新的值是对象或数组的情况
