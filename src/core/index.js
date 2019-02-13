@@ -1,6 +1,7 @@
 import Vue from './instance/index'
 import { initGlobalAPI } from './global-api/index'
 import { isServerRendering } from 'core/util/env'
+import { FunctionalRenderContext } from 'core/vdom/create-functional-component'
 // 从 core/util/env 这个 path 可以看出来 src 是作为整个构建的目录的根路径, src 下的所有文件都可以通过这样的绝对路径访问到，因为这个文件是在 src/core/index
 
 /**
@@ -21,6 +22,12 @@ Object.defineProperty(Vue.prototype, '$ssrContext', {
     /* istanbul ignore next */
     return this.$vnode && this.$vnode.ssrContext
   }
+})
+
+// expose FunctionalRenderContext for ssr runtime helper installation
+// 供服务端渲染使用
+Object.defineProperty(Vue, 'FunctionalRenderContext', {
+  value: FunctionalRenderContext
 })
 
 /**
