@@ -345,23 +345,37 @@ export function defineReactive (
  * Set a property on an object. Adds the new property and
  * triggers change notification if the property doesn't
  * already exist.
+ * Vue.set/vm.$set 的实现
  */
 export function set (target: Array<any> | Object, key: any, val: any): any {
+  // 边界处理
   if (process.env.NODE_ENV !== 'production' &&
     (isUndef(target) || isPrimitive(target))
   ) {
     warn(`Cannot set reactive property on undefined, null, or primitive value: ${(target: any)}`)
   }
+  // 数组直接插入新的值在对应位置即可
   if (Array.isArray(target) && isValidArrayIndex(key)) {
+    // 文档里对数组的响应除了 set 方法也推荐了直接用 splice
+    // 其实这里底层还是用 splice 实现的
     target.length = Math.max(target.length, key)
     target.splice(key, 1, val)
+    // 数组不需要在这里进行 defineReactive 处理
+    // 数组的响应在 ./array.js 里统一重写 Array.prototype 上的方法来处理
     return val
   }
+  // 如果 key 已经存在，直接修改并返回对应的 val
+  // key in target 会检查原型上的可枚举属性
+  // 以前只检查 hasOwn 成立的属性，现在放宽到原型上，见 PR: https://github.com/vuejs/vue/issues/6845
   if (key in target && !(key in Object.prototype)) {
     target[key] = val
     return val
   }
+  // 下面就是为对象设置新的响应属性
+  // 首先拿到数据对象的 Observer 实例
   const ob = (target: any).__ob__
+  // 不处理 Vue 实例或者根数据对象
+  // 参考：http://hcysun.me/vue-design/art/7vue-reactive.html#vue-set-set
   if (target._isVue || (ob && ob.vmCount)) {
     process.env.NODE_ENV !== 'production' && warn(
       'Avoid adding reactive properties to a Vue instance or its root $data ' +
@@ -369,10 +383,13 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
     )
     return val
   }
+  // 如果没有 Observer 实例，说明 target 本身不是响应的数据对象，那么直接赋值并返回即可
   if (!ob) {
     target[key] = val
     return val
   }
+  // 然后在 Observer 实例的 value 上添加响应以及订阅依赖
+  // 前面提到了循环引用，其实 target.__ob__.value === target
   defineReactive(ob.value, key, val)
   ob.dep.notify()
   return val
