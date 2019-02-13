@@ -1,9 +1,9 @@
 /* @flow */
 
 import {
-  no, // always return false
-  noop, // 空函数
-  identity // always return param itself
+  no,       // always return false
+  noop,     // 空函数
+  identity  // always return param itself
 } from 'shared/util'
 
 import { LIFECYCLE_HOOKS } from 'shared/constants'
@@ -28,6 +28,9 @@ export type Config = {
   getTagNamespace: (x?: string) => string | void;
   mustUseProp: (tag: string, type: ?string, name: string) => boolean;
 
+  // private
+  async: boolean;
+
   // legacy
   _lifecycleHooks: Array<string>;
 };
@@ -37,6 +40,7 @@ export default ({
    * 合并策略
    * Option merge strategies (used in core/util/options)
    */
+  // $flow-disable-line
   optionMergeStrategies: Object.create(null),
 
   /**
@@ -85,6 +89,7 @@ export default ({
    * 用户自定义键盘事件别名
    * Custom user key aliases for v-on
    */
+  // $flow-disable-line
   keyCodes: Object.create(null),
 
   /**
@@ -126,6 +131,13 @@ export default ({
    * Platform-dependent.
    */
   mustUseProp: no,
+
+  /**
+   * 主要供 Vue Test Utils 使用，前面提到约定是私有的属性，参见 PR #8240
+   * Perform updates asynchronously. Intended to be used by Vue Test Utils
+   * This will significantly reduce performance if set to false.
+   */
+  async: true,
 
   /**
    * 由于历史遗留因素暴露出生命周期钩子的命名
