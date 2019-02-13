@@ -397,18 +397,23 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
 
 /**
  * Delete a property and trigger change if necessary.
+ * 删除属性并触发更新， Vue.delete/vm.$delete 的实现
  */
 export function del (target: Array<any> | Object, key: any) {
+  // 和 set 一样的边界处理
   if (process.env.NODE_ENV !== 'production' &&
     (isUndef(target) || isPrimitive(target))
   ) {
     warn(`Cannot delete reactive property on undefined, null, or primitive value: ${(target: any)}`)
   }
+  // 数组直接用 splice 删除对应位置的元素触发更新
   if (Array.isArray(target) && isValidArrayIndex(key)) {
     target.splice(key, 1)
     return
   }
+  // 下面是删除对象属性的处理
   const ob = (target: any).__ob__
+  // 和 set 一样的条件判断
   if (target._isVue || (ob && ob.vmCount)) {
     process.env.NODE_ENV !== 'production' && warn(
       'Avoid deleting properties on a Vue instance or its root $data ' +
@@ -416,10 +421,14 @@ export function del (target: Array<any> | Object, key: any) {
     )
     return
   }
+  // 要删除的属性只能是在对象自身上
   if (!hasOwn(target, key)) {
     return
   }
+  // delete 操作符删除属性
   delete target[key]
+  // 如果 target 没有 Observer 实例说明不是响应的，直接返回
+  // 如果是响应的数据对象，那么通知依赖更新
   if (!ob) {
     return
   }
