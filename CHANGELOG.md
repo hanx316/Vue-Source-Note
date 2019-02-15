@@ -56,4 +56,4 @@
 
 #### 2019.02.15
 
-- src/core/observe 中如果观测一个数组的问题
+- src/core/observe 中如何观测一个数组的问题
