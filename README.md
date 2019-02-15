@@ -24,3 +24,15 @@ Vue 的 node_modules 里有 phantomjs, 还会安装 chromedriver, 由于众所�
 phantomjs_cdnurl=https://cdn.npm.taobao.org/dist/phantomjs
 chromedriver_cdnurl=https://cdn.npm.taobao.org/dist/chromedriver
 ```
+
+### 参考资源
+
+[Vue.js 技术揭秘](https://ustbhuangyi.github.io/vue-analysis/)
+
+[Vue 技术内幕](http://hcysun.me/vue-design/)
+
+[剖析 Vue.js 内部运行机制 - 掘金小册](https://juejin.im/book/5a36661851882538e2259c0f)
+
+[Vue.js 源码解析 by.染陌](https://github.com/answershuto/learnVue)
+
+[Vue@2.5.17源码详解](https://github.com/porcelainHeart/vue-explain)
