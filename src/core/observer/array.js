@@ -7,6 +7,7 @@ import { def } from '../util/index'
 
 const arrayProto = Array.prototype
 // 拷贝了一份 Array.prototype 来重写方法，避免干扰原来的 Array.prototype
+// arrayMethods.__proto__ === Array.prototype
 export const arrayMethods = Object.create(arrayProto)
 
 // 要重写的方法
