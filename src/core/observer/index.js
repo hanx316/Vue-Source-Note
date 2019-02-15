@@ -150,6 +150,8 @@ function protoAugment (target, src: Object) {
 function copyAugment (target: Object, src: Object, keys: Array<string>) {
   for (let i = 0, l = keys.length; i < l; i++) {
     const key = keys[i]
+    // 在数组对象上直接添加方法没有直接赋值，而是用 def 方法
+    // 因为直接赋值的话，在数组对象上添加的方法是可以枚举的
     def(target, key, src[key])
   }
 }
