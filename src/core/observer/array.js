@@ -45,6 +45,7 @@ methodsToPatch.forEach(function (method) {
         break
     }
     // 插入的元素需要调用观测数组的方法完成观测
+    // 实际上只有新插入的元素才是需要新进行观测的
     if (inserted) ob.observeArray(inserted)
     // notify change
     // 通知依赖更新
