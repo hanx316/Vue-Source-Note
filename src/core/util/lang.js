@@ -20,11 +20,12 @@ export function isReserved (str: string): boolean {
 /**
  * Define a property.
  * 对 Object.defineProperty 的简单封装，免得每次写一堆
+ * enumerable 可选参数，如果不可枚举，直接不用传
  */
 export function def (obj: Object, key: string, val: any, enumerable?: boolean) {
   Object.defineProperty(obj, key, {
     value: val,
-    enumerable: !!enumerable,
+    enumerable: !!enumerable, // 默认 false
     writable: true,
     configurable: true
   })
