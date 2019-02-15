@@ -2,12 +2,12 @@
 
 import Dep from './dep'
 import VNode from '../vdom/vnode'
-import { arrayMethods } from './array'
+import { arrayMethods } from './array' // array 支持的响应原型方法重写
 import {
   def,                  // core/util/lang
   warn,
   hasOwn,               // shared/util
-  hasProto,
+  hasProto,             // core/util/env 是否可以在当前环境下使用 __proto__ 访问对象原型
   isObject,             // shared/util
   isPlainObject,        // shared/util
   isPrimitive,          // 2.6.x 新引入的
@@ -90,10 +90,13 @@ export class Observer {
     // 处理数组
     if (Array.isArray(value)) {
       if (hasProto) {
+        // 如果可以通过 __proto__ 访问原型，直接在原型上扩展数组支持响应的方法
         protoAugment(value, arrayMethods)
       } else {
+        // 如果没有 __proto__, 就在数组对象上直接添加扩展数组支持响应的方法
         copyAugment(value, arrayMethods, arrayKeys)
       }
+      // 然后遍历观测数组元素
       this.observeArray(value)
     } else {
       // 纯对象则直接遍历对象的 key 添加 getter/setter
@@ -130,6 +133,7 @@ export class Observer {
 /**
  * Augment a target Object or Array by intercepting
  * the prototype chain using __proto__
+ * 如果支持访问 __proto__, Vue 观测的数组原型会指向 Vue 重写的数组方法 arrayMethods
  */
 function protoAugment (target, src: Object) {
   /* eslint-disable no-proto */
@@ -140,6 +144,7 @@ function protoAugment (target, src: Object) {
 /**
  * Augment a target Object or Array by defining
  * hidden properties.
+ * 如果不支持访问 __proto__, Vue 会在观测的数组对象上遍历添加 Vue 重写的数组方法
  */
 /* istanbul ignore next */
 function copyAugment (target: Object, src: Object, keys: Array<string>) {
